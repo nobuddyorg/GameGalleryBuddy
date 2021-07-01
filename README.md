@@ -13,3 +13,5 @@ It requires some parameters to properly work:
 * shuffle (required = false, defaultValue = "false"): order alphabetically or randomly.
 
 example: http://localhost:8080/collection?username=besessener&size=85&showName=no&showUrl=no&shuffle=yes
+
+![image](https://user-images.githubusercontent.com/8039350/124144974-b876c480-da8c-11eb-9cc0-76a2c350bf6b.png)
