@@ -21,12 +21,12 @@ class BGGScraper {
 
         while (content.contains(queueMessage)) {
             try {
-                URL obj = "$searchBase/$searchQuery?$searchParameter=$username".toURL()
-                HttpURLConnection conn = (HttpURLConnection) obj.openConnection()
+                URL url = "$searchBase/$searchQuery?$searchParameter=$username".toURL()
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection()
                 conn.setInstanceFollowRedirects(true)
                 HttpURLConnection.setFollowRedirects(true)
 
-                content = conn.getHeaderField("Location").toURL().text
+                content = fetchFromUrl(conn)
                 if (content.contains(queueMessage)) sleep(1 * 1000)
             } catch (e) {
                 sleep(5 * 1000)
@@ -34,5 +34,9 @@ class BGGScraper {
         }
 
         return new XmlSlurper().parseText(content)
+    }
+
+    String fetchFromUrl(HttpURLConnection conn) {
+        conn.getHeaderField("Location").toURL().text
     }
 }
