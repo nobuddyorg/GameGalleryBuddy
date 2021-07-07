@@ -1,5 +1,5 @@
-# BGGWallChart
-Creates a wall chart based with all games of a given user on BoardGameGeek.com
+# BGGWallPaper
+Creates a wall paper based with all games of a given user on BoardGameGeek.com
 
 Run the spring boot application with `./gradlew bootRun`.
 Access it on `http://localhost:8080/collection`
