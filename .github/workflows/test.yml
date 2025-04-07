@@ -28,3 +28,16 @@ jobs:
       # Run tests
       - name: gradle test
         run: ./gradlew.bat test
+
+      # start docker
+      - name: start docker
+        run: |
+          ./run.sh &
+          sleep 10
+          img_count=$(curl -X GET "http://localhost:8080/collection?username=besessener&size=85&showName=no&showUrl=no&shuffle=yes" | grep -o "<img[^>]*>" | wc -l)
+          if [ "$img_count" -gt 10 ]; then
+            echo "There are more than 10 images ($img_count images)."
+          else
+            echo "There are 10 or fewer images ($img_count images)."
+            exit 1
+          fi

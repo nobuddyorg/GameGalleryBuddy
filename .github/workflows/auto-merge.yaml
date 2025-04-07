@@ -1,0 +1,33 @@
+name: "Dependabot Auto-Merge"
+
+on:
+    pull_request:
+        types: [opened, synchronize, ready_for_review]
+        branches:
+            - develop
+
+permissions:
+    pull-requests: write
+    contents: write
+
+jobs:
+    auto-approve-merge:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Approve PR if Dependabot is the creator
+              if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh pr review ${{ github.event.pull_request.number }} --approve --repo ${{ github.repository }}
+
+            - name: Merge PR if Dependabot is the creator
+              if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh pr merge ${{ github.event.pull_request.number }} --merge --delete-branch --auto --repo ${{ github.repository }}
