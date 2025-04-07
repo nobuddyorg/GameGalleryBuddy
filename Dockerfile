@@ -7,7 +7,7 @@ COPY gradle gradle
 COPY gradlew gradlew
 RUN ./gradlew build --no-daemon --stacktrace --info
 
-FROM openjdk:21-jdk-slim
+FROM openjdk:25-jdk-slim
 WORKDIR '/app'
 COPY --from=build /app/build/libs/boardgames-0.0.1.jar .
 EXPOSE 8080
