@@ -27,7 +27,7 @@ jobs:
 
       # Run tests
       - name: gradle test
-        run: ./gradlew.bat test
+        run: ./gradlew test
 
       # start docker
       - name: start docker
