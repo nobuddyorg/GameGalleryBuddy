@@ -1,7 +1,7 @@
 # BGGWallPaper
 Creates a wall paper based with all games of a given user on BoardGameGeek.com
 
-Run the spring boot application with `./gradlew bootRun`.
+Run the application with `./run.sh`.
 Access it on `http://localhost:8080/collection`
 
 It requires some parameters to properly work:
