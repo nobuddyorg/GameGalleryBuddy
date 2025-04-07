@@ -1,6 +1,6 @@
 package me.games.collection
 
-
+import groovy.xml.XmlSlurper
 import org.springframework.stereotype.Component
 
 @Component('bggScraper')
