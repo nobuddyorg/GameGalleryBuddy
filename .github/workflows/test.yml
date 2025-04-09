@@ -77,7 +77,7 @@ jobs:
       - name: start docker
         run: |
           ./run.sh &
-          timeout=60
+          timeout=240
           interval=5
           elapsed=0
 
