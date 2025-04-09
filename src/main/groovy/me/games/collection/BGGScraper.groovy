@@ -7,11 +7,6 @@ import org.springframework.stereotype.Component
 class BGGScraper {
 
     def fetchCollection(String username) {
-
-//        System.getProperties().put('proxySet', 'true');
-//        System.getProperties().put('proxyHost', 'hostname');
-//        System.getProperties().put('proxyPort', '3128');
-
         String searchBase = 'http://api.geekdo.com/xmlapi2'
         String searchQuery = 'collection'
         String searchParameter = 'username'
@@ -36,7 +31,7 @@ class BGGScraper {
         return new XmlSlurper().parseText(content)
     }
 
-    String fetchFromUrl(HttpURLConnection conn) {
+    protected String fetchFromUrl(HttpURLConnection conn) {
         conn.getHeaderField("Location").toURL().text
     }
 }

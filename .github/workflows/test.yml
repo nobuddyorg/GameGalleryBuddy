@@ -17,7 +17,7 @@ permissions:
   contents: read
   issues: read
   checks: write
-  pull-requests: read
+  pull-requests: write
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -33,13 +33,51 @@ jobs:
 
       # Run tests
       - name: gradle test
-        run: ./gradlew test
+        run: ./gradlew clean jacocoTestReport
+
+      # Reporting
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action/linux@v2
+        if: always()
+        with:
+          check_name: "Unit Tests"
+          files: |
+            ./build/test-results/**/*.xml
+      - name: Install ReportGenerator
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+      - name: Convert JaCoCo to Cobertura
+        run: |
+          reportgenerator \
+            -reports:./build/reports/jacoco/test/jacocoTestReport.xml \
+            -targetdir:coverage-report \
+            -reporttypes:Cobertura
+      - name: Generate Coverage Report Summary
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage-report/Cobertura.xml
+          badge: true
+          fail_below_min: true
+          hide_complexity: true
+          format: markdown
+          output: both
+          thresholds: "60 80"
+      - name: Append Coverage Report to GitHub Summary
+        if: always()
+        run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
+      - name: Post Coverage Comment to PR
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: code-coverage-results.md
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # start docker
       - name: start docker
         run: |
           ./run.sh &
-          timeout=60
+          timeout=240
           interval=5
           elapsed=0
 

@@ -1,9 +1,6 @@
 package me.games.collection
 
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -12,6 +9,10 @@ import org.springframework.web.bind.annotation.*
 class GameRestController {
     @Autowired
     HtmlBuilder htmlBuilder
+
+    GameRestController(HtmlBuilder htmlBuilder) {
+        this.htmlBuilder = htmlBuilder
+    }
 
     @GetMapping('/collection')
     String fetchCollection(

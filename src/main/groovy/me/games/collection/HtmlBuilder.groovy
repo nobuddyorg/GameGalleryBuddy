@@ -9,6 +9,10 @@ class HtmlBuilder {
     @Autowired
     BGGScraper bggScraper
 
+    HtmlBuilder(BGGScraper bggScraper) {
+        this.bggScraper = bggScraper
+    }
+
     def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle) {
         def xml = bggScraper.fetchCollection(username)
         def games = xml.children()
@@ -94,7 +98,7 @@ class HtmlBuilder {
                 div(class: "flex-container") {
                     games.each { game ->
                         div(class: 'image') {
-                            a(href : showUrl ? "https://boardgamegeek.com/boardgame/${game.id}" : '', target: "_blank") {
+                            a(href: showUrl ? "https://boardgamegeek.com/boardgame/${game.id}" : '', target: "_blank") {
                                 img(alt: game.name, title: showName ? '' : game.name, src: game.imageUrl)
                                 if (showName) span(class: 'overlay', game.name)
                             }
