@@ -2,9 +2,7 @@
 
 **BGGWallPaper** generates a wallpaper using all board games from a specified [BoardGameGeek](https://boardgamegeek.com) user’s collection.
 
----
-
-## 🚀 Getting Started
+## Getting Started
 
 Run the application with:
 
@@ -18,9 +16,7 @@ Then, open your browser and go to:
 http://localhost:8080/collection
 ```
 
----
-
-## 🔧 Parameters
+## Parameters
 
 | Parameter   | Required | Default | Description                                                                 |
 |-------------|----------|---------|-----------------------------------------------------------------------------|
@@ -30,9 +26,7 @@ http://localhost:8080/collection
 | `showUrl`   | ❌ No     | `true`  | Whether to make game images clickable, linking to their BGG pages.         |
 | `shuffle`   | ❌ No     | `false` | Shuffle the games randomly (if `true`) or order them alphabetically.       |
 
----
-
-## 🧪 Example
+## Example
 
 Open the following URL in your browser to see an example:
 
@@ -40,8 +34,6 @@ Open the following URL in your browser to see an example:
 http://localhost:8080/collection?username=besessener&size=85&showName=no&showUrl=no&shuffle=yes
 ```
 
----
-
-## 🖼️ Sample Output
+## Sample Output
 
 ![Wall preview](https://user-images.githubusercontent.com/8039350/124144974-b876c480-da8c-11eb-9cc0-76a2c350bf6b.png)
