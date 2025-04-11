@@ -1,10 +1,10 @@
 FROM gradle:8.13.0-jdk21 AS build
 WORKDIR '/app'
-COPY src src
-COPY build.gradle build.gradle
-COPY settings.gradle settings.gradle
-COPY gradle gradle
 COPY gradlew gradlew
+COPY gradle gradle
+COPY settings.gradle settings.gradle
+COPY build.gradle build.gradle
+COPY src src
 RUN ./gradlew build --no-daemon --stacktrace --info
 
 FROM openjdk:25-jdk-slim
