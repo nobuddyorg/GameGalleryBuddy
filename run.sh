@@ -2,7 +2,7 @@
 
 echo "Select an option to run the application:"
 echo "1. Run with Docker"
-echo "2. Run directly with Gradle (gradlew)"
+echo "2. Run directly with Gradle (no installed tools required)"
 read -p "Enter the number (1 or 2): " choice
 
 case $choice in
