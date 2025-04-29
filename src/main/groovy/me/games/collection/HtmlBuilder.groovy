@@ -13,7 +13,7 @@ class HtmlBuilder {
         this.bggScraper = bggScraper
     }
 
-    def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle) {
+    def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle, int overflow = 0, int repeat = 0) {
         def xml = bggScraper.fetchCollection(username)
         def games = xml.children()
                 .findAll {
@@ -26,6 +26,8 @@ class HtmlBuilder {
         if (shuffle) {
             Collections.shuffle(games)
         }
+
+        games = games * (repeat + 1)
 
         def writer = new StringWriter()
         def markup = new groovy.xml.MarkupBuilder(writer)
@@ -45,6 +47,9 @@ class HtmlBuilder {
                     ::-webkit-scrollbar {
                         width: 0px;
                         background: transparent; /* make scrollbar transparent */
+                    }
+                    html, body {
+                        overflow-x: visible; /* or scroll if you want a scrollbar */
                     }                    
                     
                     .flex-container {
@@ -53,12 +58,18 @@ class HtmlBuilder {
                         flex-direction: row;
                         align-items: stretch;
                         align-content: stretch;
-                        justify-content: space-between;
+                        justify-content: flex-start;
+                        gap: 0;
+                        margin-left: -${overflow}px;
                     }
                     
                     .image {
                         width: ${size}px;
                         height: ${size}px;
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                        padding-left: ${overflow}px;
                     }
                     
                     body {

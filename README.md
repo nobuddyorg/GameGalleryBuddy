@@ -25,13 +25,15 @@ http://localhost:8080/collection
 | `showName`  | ❌ No     | `false` | Whether to display the game name as an overlay on the image.               |
 | `showUrl`   | ❌ No     | `true`  | Whether to make game images clickable, linking to their BGG pages.         |
 | `shuffle`   | ❌ No     | `false` | Shuffle the games randomly (if `true`) or order them alphabetically.       |
+| `overflow`  | ❌ No     | `0`     | Allows an image overflow on the edge of the browser, given as Pixels.      |
+| `repeat`    | ❌ No     | `0`     | Will repeat the images in same order at the end if `>0`.                   |
 
 ## Example
 
 Open the following URL in your browser to see an example:
 
 ```
-http://localhost:8080/collection?username=besessener&size=85&showName=no&showUrl=no&shuffle=yes
+http://localhost:8080/collection?username=besessener&size=85&showName=no&showUrl=no&shuffle=yes&overflow=20&repeat=1
 ```
 
 ## Sample Output
