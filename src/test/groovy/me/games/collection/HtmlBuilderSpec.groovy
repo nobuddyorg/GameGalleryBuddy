@@ -108,7 +108,7 @@ class HtmlBuilderSpec extends Specification {
 
         then:
             println(result)
-            result.contains("<a href='' target='_blank'>")
+            !result.contains("<a href=")
     }
 
     def "build - handles large number of games"() {

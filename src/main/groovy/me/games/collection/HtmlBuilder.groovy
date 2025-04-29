@@ -105,13 +105,22 @@ class HtmlBuilder {
                     }
                 """)
             }
+
             body {
                 div(class: "flex-container") {
                     games.each { game ->
+                        def content = {
+                            img(alt: game.name, title: showName ? '' : game.name, src: game.imageUrl)
+                            if (showName) span(class: 'overlay', game.name)
+                        }
+
                         div(class: 'image') {
-                            a(href: showUrl ? "https://boardgamegeek.com/boardgame/${game.id}" : '', target: "_blank") {
-                                img(alt: game.name, title: showName ? '' : game.name, src: game.imageUrl)
-                                if (showName) span(class: 'overlay', game.name)
+                            if (showUrl) {
+                                a(href: "https://boardgamegeek.com/boardgame/${game.id}", target: "_blank") {
+                                    content()
+                                }
+                            } else {
+                                content()
                             }
                         }
                     }
