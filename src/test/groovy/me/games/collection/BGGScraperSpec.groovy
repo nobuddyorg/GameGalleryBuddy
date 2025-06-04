@@ -8,18 +8,16 @@ import java.io.IOException
 class BGGScraperSpec extends Specification {
 
     @Subject
-    BGGScraper scraper // No need for Spy() if we are testing its public method and it calls its own protected method
+    BGGScraper scraper
 
     def setup() {
-        // Initialize scraper and manually set the value that @Value would inject
         scraper = new BGGScraper()
-        scraper.searchBase = "https://api.geekdo.com/xmlapi2" // Ensure this is set for tests
+        scraper.searchBase = "https://api.geekdo.com/xmlapi2"
     }
 
     def "fetchCollection - successful fetch"() {
         given:
             String mockXml = '''<items totalitems="1"><item objectid="1"><name>Game 1</name></item></items>'''
-            // Use a closure to define the mock behavior for fetchFromUrl
             scraper.metaClass.fetchFromUrl = { HttpURLConnection conn -> mockXml }
 
         when:
@@ -48,7 +46,7 @@ class BGGScraperSpec extends Specification {
             def result = scraper.fetchCollection("testuser")
 
         then:
-            callCount == 3 // Ensure it retried twice
+            callCount == 3
             result.item.size() == 1
             result.item[0].name.text() == "Game 2"
     }
@@ -56,7 +54,7 @@ class BGGScraperSpec extends Specification {
     def "fetchCollection - throws RuntimeException if queue message persists after max retries"() {
         given:
             String queueMessage = "Please try again later for access"
-            int maxRetries = BGGScraper.MAX_RETRIES // Access static final field
+            int maxRetries = BGGScraper.MAX_RETRIES
             int callCount = 0
 
             scraper.metaClass.fetchFromUrl = { HttpURLConnection conn ->
@@ -92,7 +90,7 @@ class BGGScraperSpec extends Specification {
             def result = scraper.fetchCollection("testuser")
 
         then:
-            callCount == 3 // Ensure it retried twice
+            callCount == 3
             result.item[0].name.text() == "Game 3"
     }
 
@@ -133,7 +131,7 @@ class BGGScraperSpec extends Specification {
             def result = scraper.fetchCollection("testuser")
 
         then:
-            callCount == 2 // Ensure it retried once
+            callCount == 2
             result.item[0].name.text() == "Game 4"
     }
 
@@ -157,7 +155,6 @@ class BGGScraperSpec extends Specification {
     def "fetchCollection - throws IOException if fetchFromUrl indicates an HTTP error (e.g. 404)"() {
         given:
         scraper.metaClass.fetchFromUrl = { HttpURLConnection conn ->
-            // This simulates the behavior of fetchFromUrl when it encounters an HTTP error
             throw new IOException("Server returned HTTP error code 404: Not Found")
         }
 
@@ -165,15 +162,11 @@ class BGGScraperSpec extends Specification {
         scraper.fetchCollection("nonexistentuser")
 
         then:
-        // The exception should propagate after retries
         thrown(IOException)
     }
 
-    // Cleanup metaclass modifications if any were made globally, though here it's instance-specific.
-    // Spock typically handles cleanup of mocks and stubs defined with its own mechanisms.
-    // For metaClass changes on the scraper instance, they are usually contained to the instance.
-    // If we were modifying BGGScraper.metaClass (static), cleanup would be more critical.
     def cleanup() {
-        // GroovySystem.metaClassRegistry.removeMetaClass(BGGScraper.class) // If we did global metaclass changes
+        // Intentionally empty, Spock handles most mock/stub cleanup.
+        // MetaClass changes on instances are generally garbage collected with the instance.
     }
 }

@@ -3,12 +3,11 @@ package me.games.collection
 import spock.lang.Specification
 import spock.lang.Subject
 import groovy.xml.XmlSlurper
-import groovy.xml.slurpersupport.GPathResult // Added for potentially more specific parsing
+import groovy.xml.slurpersupport.GPathResult
 
 class HtmlBuilderSpec extends Specification {
 
     HtmlBuilder htmlBuilder
-    // Use BGGScraper as the type for the mock for clarity
     BGGScraper bggScraper = Mock(BGGScraper)
 
     def setup() {
@@ -28,36 +27,35 @@ class HtmlBuilderSpec extends Specification {
                     <thumbnail>https://example.com/game2.jpg</thumbnail>
                     <status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0" lastmodified="2023-01-01 00:00:00"/>
                 </item>
-                <item objecttype="other" objectid="3" subtype="boardgame"> <!-- Should be filtered: objecttype != 'thing' -->
+                <item objecttype="other" objectid="3" subtype="boardgame">
                     <name type="primary" sortindex="1">Game 3 (Not a 'thing')</name>
                     <thumbnail>https://example.com/game3.jpg</thumbnail>
-                    <status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0" lastmodified="2023-01-01 00:00:00"/>
+                    <status own="1"/>
                 </item>
-                <item objecttype="thing" objectid="4" subtype="boardgame"> <!-- Should be filtered: status own != '1' -->
+                <item objecttype="thing" objectid="4" subtype="boardgame">
                     <name type="primary" sortindex="1">Game 4 (Not owned)</name>
                     <thumbnail>https://example.com/game4.jpg</thumbnail>
-                    <status own="0" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0" lastmodified="2023-01-01 00:00:00"/>
+                    <status own="0"/>
                 </item>
-                <item objecttype="thing" objectid="5" subtype="boardgameexpansion"> <!-- Should be filtered: subtype != 'boardgame' -->
+                <item objecttype="thing" objectid="5" subtype="boardgameexpansion">
                     <name type="primary" sortindex="1">Game 5 (Expansion)</name>
                     <thumbnail>https://example.com/game5.jpg</thumbnail>
-                    <status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0" lastmodified="2023-01-01 00:00:00"/>
+                    <status own="1"/>
                 </item>
               </items>'''
             GPathResult mockParsedXml = new XmlSlurper().parseText(mockXmlPayload)
             bggScraper.fetchCollection("testuser") >> mockParsedXml
 
         when:
-            // Parameters: username, size, showName, showUrl, shuffle, overflow = 0, repeat = 0
             def result = htmlBuilder.build("testuser", 200, true, true, false, 0, 0)
             GPathResult parsedHtml = new XmlSlurper().parseText(result)
 
         then:
             1 * bggScraper.fetchCollection("testuser")
-            parsedHtml.head.title.text() == "testuser's colelction" // Typo "colelction" is in source
+            parsedHtml.head.title.text() == "testuser's colelction"
 
             def images = parsedHtml.body.'div'.'div'.img
-            images.size() == 2 // Only Game 1 and Game 2 should pass filters
+            images.size() == 2
             images[0].@alt.text() == "Game 1"
             images[1].@alt.text() == "Game 2"
 
@@ -79,8 +77,8 @@ class HtmlBuilderSpec extends Specification {
 
         then:
             1 * bggScraper.fetchCollection("testuser")
-            parsedHtml.body.'div'.'div'.size() == 0 // No image divs
-            !result.contains("<div class='image'>") // Alternative check
+            parsedHtml.body.'div'.'div'.size() == 0
+            !result.contains("<div class='image'>")
     }
 
     def "build - hides name overlay when showName is false"() {
@@ -96,9 +94,9 @@ class HtmlBuilderSpec extends Specification {
 
         then:
             1 * bggScraper.fetchCollection("testuser")
-            parsedHtml.body.'div'.'div'.a.span.size() == 0 // No span for overlay
+            parsedHtml.body.'div'.'div'.a.span.size() == 0
             !result.contains("<span class='overlay'>Game 1</span>")
-            parsedHtml.body.'div'.'div'.a.img.@title == "Game 1" // Name should be in title attribute of img
+            parsedHtml.body.'div'.'div'.a.img.@title == "Game 1"
     }
 
     def "build - hides URL when showUrl is false"() {
@@ -114,8 +112,8 @@ class HtmlBuilderSpec extends Specification {
 
         then:
             1 * bggScraper.fetchCollection("testuser")
-            parsedHtml.body.'div'.'div'.a.size() == 0 // No anchor tag
-            parsedHtml.body.'div'.'div'.img.size() == 1 // Image should still be there
+            parsedHtml.body.'div'.'div'.a.size() == 0
+            parsedHtml.body.'div'.'div'.img.size() == 1
             !result.contains("<a href=")
     }
 
@@ -160,11 +158,11 @@ class HtmlBuilderSpec extends Specification {
             def gamesWithShuffle = extractGameOrderFromHtml(resultWithShuffle)
 
         then: "The order of games should be different"
-        1 * bggScraper.fetchCollection("testuser") // For no shuffle
-        1 * bggScraper.fetchCollection("testuser") // For with shuffle
+        1 * bggScraper.fetchCollection("testuser")
+        1 * bggScraper.fetchCollection("testuser")
         gamesNoShuffle.size() == 50
         gamesWithShuffle.size() == 50
-        gamesNoShuffle != gamesWithShuffle // High probability for 50 items
+        gamesNoShuffle != gamesWithShuffle
 
         and: "Verify all original games are present in shuffled list"
         gamesNoShuffle.toSet() == gamesWithShuffle.toSet()
@@ -177,7 +175,7 @@ class HtmlBuilderSpec extends Specification {
                 <item objectid="2" objecttype="thing" subtype="boardgame"><status own="1"/><name>Game 2</name><thumbnail>g2.jpg</thumbnail></item>
             </items>'''
             bggScraper.fetchCollection("testuser") >> new XmlSlurper().parseText(mockXmlPayload)
-            int repeatCount = 2 // This means original + 2 repetitions = 3 times total
+            int repeatCount = 2
 
         when:
             def result = htmlBuilder.build("testuser", 200, true, true, false, 0, repeatCount)
@@ -186,9 +184,8 @@ class HtmlBuilderSpec extends Specification {
         then:
             1 * bggScraper.fetchCollection("testuser")
             def images = parsedHtml.body.'div'.'div'.a.img
-            images.size() == 2 * (repeatCount + 1) // Original games * (repeat + 1)
+            images.size() == 2 * (repeatCount + 1)
 
-            // Check for specific game repetition pattern
             images[0].@alt.text() == "Game 1"
             images[1].@alt.text() == "Game 2"
             images[2].@alt.text() == "Game 1"
@@ -210,19 +207,12 @@ class HtmlBuilderSpec extends Specification {
 
         then:
             1 * bggScraper.fetchCollection("testuser")
-            // Check CSS strings for overflow values
-            // The CSS for flex-container margin-left is negative
             result.contains("margin-left: -${overflowValue}px;")
-            // The CSS for image padding-left is positive
             result.contains("padding-left: ${overflowValue}px;")
     }
 
-    // Helper method from existing tests, adapted slightly
     private List<String> extractGameOrderFromHtml(String html) {
         def parsed = new XmlSlurper().parseText(html)
         return parsed.body.div.div.depthFirst().grep { it.name() == 'img' }*.@alt*.text()
     }
-
-    // Removed the large number of games test as it's implicitly covered by shuffle and repeat tests.
-    // Removed the println statements from the original tests.
 }
