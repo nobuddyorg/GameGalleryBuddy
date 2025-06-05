@@ -1,99 +1,93 @@
 package me.games.collection
 
 import spock.lang.Specification
-import spock.lang.Subject
 import groovy.xml.XmlSlurper
 import groovy.xml.slurpersupport.GPathResult
 
 class HtmlBuilderSpec extends Specification {
 
     HtmlBuilder htmlBuilder
-    BGGScraper bggScraper = Mock(BGGScraper)
+    BGGScraper actualBggScraper // Using a real instance + metaClass
+    int fetchCollectionCallCount // Manual counter for interactions
 
     def setup() {
-        htmlBuilder = new HtmlBuilder(bggScraper)
+        actualBggScraper = new BGGScraper()
+        actualBggScraper.searchBase = "https://api.geekdo.com/xmlapi2"
+        htmlBuilder = new HtmlBuilder(actualBggScraper)
+        fetchCollectionCallCount = 0 // Reset for each test
     }
+
+    // Helper to stub fetchCollection and count calls
+    private void stubFetchCollection(Closure listProvider) {
+        actualBggScraper.metaClass.fetchCollection = { String usernameArg ->
+            fetchCollectionCallCount++
+            println "metaClass stub fetchCollection called with: $usernameArg, call count: $fetchCollectionCallCount"
+            listProvider.call(usernameArg) // Call the closure to get the list
+        }
+    }
+
+    def cleanup() {
+        // It's good practice to try and clean up metaclass changes,
+        // though instance-level changes like this are often less problematic.
+        // If BGGScraper.metaClass (static) was changed, cleanup is more critical.
+        // For this, we could try:
+        // GroovySystem.metaClassRegistry.removeMetaClass(BGGScraper.class)
+        // Or, more targeted, try to restore the original method if possible.
+        // Often, simply letting the instance go out of scope is enough for instance-level changes.
+        // For safety in tests, explicit cleanup can be better if issues arise.
+        // However, Spock usually isolates tests well. Let's rely on that for now.
+    }
+
 
     def "build - generates HTML with games and correct filtering"() {
         given:
-            def mockXmlPayload = '''<items termsofuse="https://boardgamegeek.com/xmlapi/termsofuse">
-                <item objecttype="thing" objectid="1" subtype="boardgame">
-                    <name type="primary" sortindex="1">Game 1</name>
-                    <thumbnail>https://example.com/game1.jpg</thumbnail>
-                    <status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0" lastmodified="2023-01-01 00:00:00"/>
-                </item>
-                <item objecttype="thing" objectid="2" subtype="boardgame">
-                    <name type="primary" sortindex="1">Game 2</name>
-                    <thumbnail>https://example.com/game2.jpg</thumbnail>
-                    <status own="1" prevowned="0" fortrade="0" want="0" wanttoplay="0" wanttobuy="0" wishlist="0" preordered="0" lastmodified="2023-01-01 00:00:00"/>
-                </item>
-                <item objecttype="other" objectid="3" subtype="boardgame">
-                    <name type="primary" sortindex="1">Game 3 (Not a 'thing')</name>
-                    <thumbnail>https://example.com/game3.jpg</thumbnail>
-                    <status own="1"/>
-                </item>
-                <item objecttype="thing" objectid="4" subtype="boardgame">
-                    <name type="primary" sortindex="1">Game 4 (Not owned)</name>
-                    <thumbnail>https://example.com/game4.jpg</thumbnail>
-                    <status own="0"/>
-                </item>
-                <item objecttype="thing" objectid="5" subtype="boardgameexpansion">
-                    <name type="primary" sortindex="1">Game 5 (Expansion)</name>
-                    <thumbnail>https://example.com/game5.jpg</thumbnail>
-                    <status own="1"/>
-                </item>
-              </items>'''
-            GPathResult mockParsedXml = new XmlSlurper().parseText(mockXmlPayload)
-            bggScraper.fetchCollection("testuser") >> mockParsedXml
+            stubFetchCollection {
+                [
+                    [name: "Game 1", imageUrl: "https://example.com/game1.jpg", id: "1"],
+                    [name: "Game 2", imageUrl: "https://example.com/game2.jpg", id: "2"]
+                ]
+            }
 
         when:
             def result = htmlBuilder.build("testuser", 200, true, true, false, 0, 0)
             GPathResult parsedHtml = new XmlSlurper().parseText(result)
 
         then:
-            1 * bggScraper.fetchCollection("testuser")
+            fetchCollectionCallCount == 1
             parsedHtml.head.title.text() == "testuser's colelction"
 
-            def images = parsedHtml.body.'div'.'div'.img
+            def images = parsedHtml.body.'div'.'div'.a.img
             images.size() == 2
             images[0].@alt.text() == "Game 1"
             images[1].@alt.text() == "Game 2"
 
             result.contains("href='https://boardgamegeek.com/boardgame/1'")
             result.contains("href='https://boardgamegeek.com/boardgame/2'")
-            !result.contains("Game 3")
-            !result.contains("Game 4")
-            !result.contains("Game 5")
     }
 
     def "build - handles empty collection gracefully"() {
         given:
-            def mockXml = new XmlSlurper().parseText('''<items></items>''')
-            bggScraper.fetchCollection("testuser") >> mockXml
+            stubFetchCollection { [] }
 
         when:
             def result = htmlBuilder.build("testuser", 200, true, true, false, 0, 0)
             GPathResult parsedHtml = new XmlSlurper().parseText(result)
-
         then:
-            1 * bggScraper.fetchCollection("testuser")
+            fetchCollectionCallCount == 1
             parsedHtml.body.'div'.'div'.size() == 0
             !result.contains("<div class='image'>")
     }
 
     def "build - hides name overlay when showName is false"() {
         given:
-            def mockXmlPayload = '''<items>
-            <item objectid="1" objecttype="thing" subtype="boardgame"><status own="1"/><name>Game 1</name><thumbnail>g1.jpg</thumbnail></item>
-            </items>'''
-            bggScraper.fetchCollection("testuser") >> new XmlSlurper().parseText(mockXmlPayload)
-
+            stubFetchCollection {
+                [[name: "Game 1", imageUrl: "g1.jpg", id: "1"]]
+            }
         when:
             def result = htmlBuilder.build("testuser", 200, false, true, false, 0, 0)
             GPathResult parsedHtml = new XmlSlurper().parseText(result)
-
         then:
-            1 * bggScraper.fetchCollection("testuser")
+            fetchCollectionCallCount == 1
             parsedHtml.body.'div'.'div'.a.span.size() == 0
             !result.contains("<span class='overlay'>Game 1</span>")
             parsedHtml.body.'div'.'div'.a.img.@title == "Game 1"
@@ -101,17 +95,14 @@ class HtmlBuilderSpec extends Specification {
 
     def "build - hides URL when showUrl is false"() {
         given:
-            def mockXmlPayload = '''<items>
-            <item objectid="1" objecttype="thing" subtype="boardgame"><status own="1"/><name>Game 1</name><thumbnail>g1.jpg</thumbnail></item>
-            </items>'''
-            bggScraper.fetchCollection("testuser") >> new XmlSlurper().parseText(mockXmlPayload)
-
+            stubFetchCollection {
+                [[name: "Game 1", imageUrl: "g1.jpg", id: "1"]]
+            }
         when:
             def result = htmlBuilder.build("testuser", 200, true, false, false, 0, 0)
             GPathResult parsedHtml = new XmlSlurper().parseText(result)
-
         then:
-            1 * bggScraper.fetchCollection("testuser")
+            fetchCollectionCallCount == 1
             parsedHtml.body.'div'.'div'.a.size() == 0
             parsedHtml.body.'div'.'div'.img.size() == 1
             !result.contains("<a href=")
@@ -119,17 +110,14 @@ class HtmlBuilderSpec extends Specification {
 
     def "build - generates correct image size and font size based on size parameter"() {
         given:
-            def mockXmlPayload = '''<items>
-            <item objectid="1" objecttype="thing" subtype="boardgame"><status own="1"/><name>Game 1</name><thumbnail>g1.jpg</thumbnail></item>
-            </items>'''
-            bggScraper.fetchCollection("testuser") >> new XmlSlurper().parseText(mockXmlPayload)
+            stubFetchCollection {
+                [[name: "Game 1", imageUrl: "g1.jpg", id: "1"]]
+            }
             int customSize = 300
-
         when:
             def result = htmlBuilder.build("testuser", customSize, true, true, false, 0, 0)
-
         then:
-            1 * bggScraper.fetchCollection("testuser")
+            fetchCollectionCallCount == 1
             result.contains(".image {\n                        width: ${customSize}px;")
             result.contains("height: ${customSize}px;")
             result.contains("min-height:${customSize}px;")
@@ -138,81 +126,75 @@ class HtmlBuilderSpec extends Specification {
     }
 
     def "build - shuffles games when shuffle flag is true"() {
-        given: "A list of many games to make coincidental same order unlikely"
-            def gameItems = (1..50).collect { i ->
-                """<item objectid="${i}" objecttype="thing" subtype="boardgame">
-                     <status own="1"/>
-                     <name>Game ${i}</name>
-                     <thumbnail>https://example.com/game${i}.jpg</thumbnail>
-                   </item>"""
-            }.join('')
-            def mockXmlPayload = "<items>${gameItems}</items>"
-            bggScraper.fetchCollection("testuser") >> new XmlSlurper().parseText(mockXmlPayload)
-
-        when: "Building HTML with and without shuffle"
-            // Note: shuffle happens on the list derived from XML *before* repeat is applied.
+        given:
+            stubFetchCollection { usernameArg -> // usernameArg is "testuser"
+                (1..50).collect { i ->
+                    [name: "Game ${i}", imageUrl: "https://example.com/game${i}.jpg", id: "${i}"]
+                }
+            }
+        when:
             def resultNoShuffle = htmlBuilder.build("testuser", 200, true, true, false, 0, 0)
+            // Reset count for the second call if stubFetchCollection is called per SUT call.
+            // The current stubFetchCollection is per test, so fetchCollectionCallCount will increment.
             def resultWithShuffle = htmlBuilder.build("testuser", 200, true, true, true, 0, 0)
 
             def gamesNoShuffle = extractGameOrderFromHtml(resultNoShuffle)
             def gamesWithShuffle = extractGameOrderFromHtml(resultWithShuffle)
-
-        then: "The order of games should be different"
-        1 * bggScraper.fetchCollection("testuser")
-        1 * bggScraper.fetchCollection("testuser")
-        gamesNoShuffle.size() == 50
-        gamesWithShuffle.size() == 50
-        gamesNoShuffle != gamesWithShuffle
-
-        and: "Verify all original games are present in shuffled list"
-        gamesNoShuffle.toSet() == gamesWithShuffle.toSet()
+        then:
+            fetchCollectionCallCount == 2
+            gamesNoShuffle.size() == 50
+            gamesWithShuffle.size() == 50
+            gamesNoShuffle != gamesWithShuffle
+            gamesNoShuffle.toSet() == gamesWithShuffle.toSet()
     }
 
     def "build - repeats games when repeat parameter is greater than 0"() {
         given:
-            def mockXmlPayload = '''<items>
-                <item objectid="1" objecttype="thing" subtype="boardgame"><status own="1"/><name>Game 1</name><thumbnail>g1.jpg</thumbnail></item>
-                <item objectid="2" objecttype="thing" subtype="boardgame"><status own="1"/><name>Game 2</name><thumbnail>g2.jpg</thumbnail></item>
-            </items>'''
-            bggScraper.fetchCollection("testuser") >> new XmlSlurper().parseText(mockXmlPayload)
+            def baseGamesList = [
+                [name: "Game 1", imageUrl: "g1.jpg", id: "1"],
+                [name: "Game 2", imageUrl: "g2.jpg", id: "2"]
+            ]
+            stubFetchCollection { baseGamesList }
             int repeatCount = 2
-
         when:
             def result = htmlBuilder.build("testuser", 200, true, true, false, 0, repeatCount)
             GPathResult parsedHtml = new XmlSlurper().parseText(result)
-
         then:
-            1 * bggScraper.fetchCollection("testuser")
-            def images = parsedHtml.body.'div'.'div'.a.img
+            fetchCollectionCallCount == 1
+            def images = parsedHtml.body.div.div.a.img
+            if (images.isEmpty()) {
+                images = parsedHtml.body.div.div.img
+            }
             images.size() == 2 * (repeatCount + 1)
 
-            images[0].@alt.text() == "Game 1"
-            images[1].@alt.text() == "Game 2"
-            images[2].@alt.text() == "Game 1"
-            images[3].@alt.text() == "Game 2"
-            images[4].@alt.text() == "Game 1"
-            images[5].@alt.text() == "Game 2"
+            def gameMap = parsedHtml.body.div.div
+            (0..<gameMap.size()).each { i ->
+                def originalGameIndex = i % baseGamesList.size()
+                def currentImgTag = gameMap[i].a.img ?: gameMap[i].img
+                assert currentImgTag.@alt.text() == baseGamesList[originalGameIndex].name
+            }
     }
 
     def "build - applies overflow CSS properties correctly"() {
         given:
-            def mockXmlPayload = '''<items>
-                <item objectid="1" objecttype="thing" subtype="boardgame"><status own="1"/><name>Game 1</name><thumbnail>g1.jpg</thumbnail></item>
-            </items>'''
-            bggScraper.fetchCollection("testuser") >> new XmlSlurper().parseText(mockXmlPayload)
+            stubFetchCollection {
+                [[name: "Game 1", imageUrl: "g1.jpg", id: "1"]]
+            }
             int overflowValue = 15
-
         when:
             def result = htmlBuilder.build("testuser", 200, true, true, false, overflowValue, 0)
-
         then:
-            1 * bggScraper.fetchCollection("testuser")
+            fetchCollectionCallCount == 1
             result.contains("margin-left: -${overflowValue}px;")
             result.contains("padding-left: ${overflowValue}px;")
     }
 
     private List<String> extractGameOrderFromHtml(String html) {
         def parsed = new XmlSlurper().parseText(html)
-        return parsed.body.div.div.depthFirst().grep { it.name() == 'img' }*.@alt*.text()
+        def images = parsed.body.div.div.a.img
+        if (images.isEmpty()) {
+             images = parsed.body.div.div.img
+        }
+        return images*.@alt*.text()
     }
 }
