@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component
 import groovy.xml.MarkupBuilder
 import java.io.StringWriter
 import java.util.Collections
+import groovy.xml.slurpersupport.GPathResult
 
 @Component('htmlBuilder')
 class HtmlBuilder {
@@ -17,17 +18,31 @@ class HtmlBuilder {
     }
 
     def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle, int overflow = 0, int repeat = 0) {
-        List<Map<String, String>> gamesList = bggScraper.fetchCollection(username)
+        GPathResult xml = bggScraper.fetchCollection(username)
+
+        List<Map<String, Object>> gamesList = xml.children()
+                .findAll {
+                    it.status.@own == "1" && \
+                    it.'@objecttype' == 'thing' && \
+                    it.'@subtype' == 'boardgame'
+                }
+                .collect {
+                    [
+                        name: it.name.text(),
+                        imageUrl: it.thumbnail.text(),
+                        id: it.'@objectid'.text() // Use .text() for attribute values for safety
+                    ]
+                }
 
         // Defensive copy if shuffle is true, as Collections.shuffle works in-place
-        List<Map<String, String>> processedGames = new ArrayList<>(gamesList)
+        List<Map<String, Object>> processedGames = new ArrayList<>(gamesList)
 
         if (shuffle) {
             Collections.shuffle(processedGames)
         }
 
         if (repeat > 0 && !processedGames.isEmpty()) {
-            List<Map<String, String>> originalGames = new ArrayList<>(processedGames)
+            List<Map<String, Object>> originalGames = new ArrayList<>(processedGames)
             for (int i = 0; i < repeat; i++) {
                 processedGames.addAll(originalGames)
             }

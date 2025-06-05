@@ -4,6 +4,7 @@ import spock.lang.Specification
 import java.net.SocketTimeoutException
 import java.io.IOException
 import java.net.HttpURLConnection // Required for metaClass signature
+import groovy.xml.slurpersupport.GPathResult
 
 class BGGScraperSpec extends Specification {
 
@@ -11,11 +12,11 @@ class BGGScraperSpec extends Specification {
 
     def setup() {
         scraper = new BGGScraper()
-        // Manually set the value that @Value would inject, as it's used by the real fetchCollection
+        // Manually set the value that @Value would inject
         scraper.searchBase = "https://api.geekdo.com/xmlapi2"
     }
 
-    def "fetchCollection - successful fetch returns list of game maps"() {
+    def "fetchCollection - successful fetch returns GPathResult"() {
         given:
             String mockXml = '''
             <items totalitems="2" termsofuse="https://boardgamegeek.com/xmlapi/termsofuse">
@@ -29,32 +30,20 @@ class BGGScraperSpec extends Specification {
                     <thumbnail>g2.jpg</thumbnail>
                     <status own="0"/>
                 </item>
-                <item objecttype="thing" objectid="3" subtype="boardgameexpansion">
-                    <name type="primary">Game 3 (Expansion)</name>
-                    <thumbnail>g3.jpg</thumbnail>
-                    <status own="1"/>
-                </item>
-                <item objecttype="thing" objectid="4" subtype="boardgame">
-                    <name type="primary">Game 4</name>
-                    <thumbnail>g4.jpg</thumbnail>
-                    <status own="1"/>
-                </item>
             </items>'''
             scraper.metaClass.fetchFromUrl = { HttpURLConnection conn -> mockXml }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
-            result instanceof List
-            // Game 2 (not owned) and Game 3 (expansion) should be filtered out
-            result.size() == 2
-            result[0].name == "Game 1"
-            result[0].id == "1"
-            result[0].imageUrl == "g1.jpg"
-            result[1].name == "Game 4"
-            result[1].id == "4"
-            result[1].imageUrl == "g4.jpg"
+            result instanceof GPathResult
+            result.name() == 'items'
+            result.@totalitems.text() == "2"
+            result.item.size() == 2
+            result.item[0].name.text() == "Game 1"
+            result.item[0].@objectid.text() == "1"
+            result.item[0].status.@own.text() == "1"
     }
 
     def "fetchCollection - retries when in queue then succeeds"() {
@@ -74,15 +63,15 @@ class BGGScraperSpec extends Specification {
             }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
             callCount == 3
-            result.size() == 1
-            result[0].name == "Game 10"
+            result instanceof GPathResult
+            result.item.name.text() == "Game 10"
     }
 
-    def "fetchCollection - returns empty list if queue message persists after max retries"() {
+    def "fetchCollection - returns error GPathResult if queue message persists after max retries"() {
         given:
             String queueMessage = "Please try again later for access"
             int maxRetries = BGGScraper.MAX_RETRIES
@@ -94,12 +83,13 @@ class BGGScraperSpec extends Specification {
             }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
             callCount == maxRetries
-            result instanceof List
-            result.isEmpty()
+            result instanceof GPathResult
+            result.name() == 'items'
+            result.error.text().contains("Persistent API queue messages")
     }
 
     def "fetchCollection - handles IOException and retries then succeeds"() {
@@ -127,15 +117,15 @@ class BGGScraperSpec extends Specification {
             }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
             callCount == 3
-            result.size() == 1
-            result[0].name == "Game 30"
+            result instanceof GPathResult
+            result.item.name.text() == "Game 30"
     }
 
-    def "fetchCollection - returns empty list if IOException persists after max retries"() {
+    def "fetchCollection - returns error GPathResult if IOException persists after max retries"() {
         given:
             int maxRetries = BGGScraper.MAX_RETRIES
             int callCount = 0
@@ -145,12 +135,13 @@ class BGGScraperSpec extends Specification {
             }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
             callCount == maxRetries
-            result instanceof List
-            result.isEmpty()
+            result instanceof GPathResult
+            result.name() == 'items'
+            result.error.text().contains("Max retries reached: IOException")
     }
 
     def "fetchCollection - handles SocketTimeoutException and retries then succeeds"() {
@@ -173,15 +164,15 @@ class BGGScraperSpec extends Specification {
             }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
             callCount == 2
-            result.size() == 1
-            result[0].name == "Game 40"
+            result instanceof GPathResult
+            result.item.name.text() == "Game 40"
     }
 
-    def "fetchCollection - returns empty list if SocketTimeoutException persists after max retries"() {
+    def "fetchCollection - returns error GPathResult if SocketTimeoutException persists after max retries"() {
         given:
             int maxRetries = BGGScraper.MAX_RETRIES
             int callCount = 0
@@ -191,25 +182,27 @@ class BGGScraperSpec extends Specification {
             }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
             callCount == maxRetries
-            result instanceof List
-            result.isEmpty()
+            result instanceof GPathResult
+            result.name() == 'items'
+            result.error.text().contains("Max retries reached: SocketTimeoutException")
     }
 
-    def "fetchCollection - returns empty list on parsing error"() {
+    def "fetchCollection - returns error GPathResult on parsing error"() {
         given:
             String malformedXml = "<items><item>malformed" // Missing closing tags
             scraper.metaClass.fetchFromUrl = { HttpURLConnection conn -> malformedXml }
 
         when:
-            List<Map<String, String>> result = scraper.fetchCollection("testuser")
+            def result = scraper.fetchCollection("testuser")
 
         then:
-            result instanceof List
-            result.isEmpty()
+            result instanceof GPathResult
+            result.name() == 'items'
+            result.error.text().contains("XML Parsing Error")
     }
 
     def cleanup() {

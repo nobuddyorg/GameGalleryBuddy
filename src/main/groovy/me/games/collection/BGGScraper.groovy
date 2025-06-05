@@ -49,7 +49,7 @@ class BGGScraper {
                 sleep(backoffTime)
                 if (retryCount >= MAX_RETRIES) {
                     println "Max retries reached for '$username' due to SocketTimeoutException. Giving up."
-                    rawXmlContent = "Error: Max retries reached - SocketTimeoutException"
+                    rawXmlContent = "<items totalitems=\"0\" termsofuse=\"error\"><error>Max retries reached: SocketTimeoutException</error></items>"
                     break
                 }
             } catch (IOException ioe) {
@@ -59,7 +59,7 @@ class BGGScraper {
                 sleep(backoffTime)
                 if (retryCount >= MAX_RETRIES) {
                     println "Max retries reached for '$username' due to IOException. Giving up."
-                    rawXmlContent = "Error: Max retries reached - IOException"
+                    rawXmlContent = "<items totalitems=\"0\" termsofuse=\"error\"><error>Max retries reached: IOException</error></items>"
                     break
                 }
             } catch (Exception e) {
@@ -69,48 +69,26 @@ class BGGScraper {
                 sleep(backoffTime)
                 if (retryCount >= MAX_RETRIES) {
                     println "Max retries reached for '$username' due to an unexpected error. Giving up."
-                    rawXmlContent = "Error: Max retries reached - Exception"
+                    rawXmlContent = "<items totalitems=\"0\" termsofuse=\"error\"><error>Max retries reached: Exception</error></items>"
                     break
                 }
             }
         }
 
-        if (rawXmlContent.contains(queueMessage) && retryCount >= MAX_RETRIES) {
-            // Persistent queue messages after retries.
-            println "Failed to fetch collection for '$username' after $MAX_RETRIES attempts due to persistent API queue messages."
-            return []
+        // If still in queue state after retries, return an empty valid XML
+        if (rawXmlContent.contains(queueMessage)) {
+            println "Failed to fetch collection for '$username' after $retryCount attempts due to persistent API queue messages."
+            rawXmlContent = "<items totalitems=\"0\" termsofuse=\"error\"><error>Persistent API queue messages</error></items>"
         }
-
-        if (rawXmlContent.startsWith("Error:")) {
-             println "Failed to fetch collection for '$username'. $rawXmlContent"
-             return []
-        }
-
-        if (rawXmlContent == queueMessage) {
-             println "Failed to fetch collection for '$username'. Initial API queue message was not cleared (MAX_RETRIES might be 0 or too low)."
-             return []
-        }
+        // If rawXmlContent was set to an error XML string above, it will be parsed here.
+        // If rawXmlContent is the initial queueMessage (e.g. MAX_RETRIES = 0), parse it (will likely be treated as bad XML).
 
         try {
-            def xml = new XmlSlurper().parseText(rawXmlContent)
-            def gamesList = xml.children()
-                    .findAll {
-                        // Use .text() for attributes to get their string value before comparison
-                        it.status.@own.text() == "1" && \
-                        it.@objecttype.text() == 'thing' && \
-                        it.@subtype.text() == 'boardgame'
-                    }
-                    .collect {
-                        [
-                            name: it.name.text(),
-                            imageUrl: it.thumbnail.text(),
-                            id: it.@objectid.text()
-                        ]
-                    }
-            return gamesList
-        } catch (Exception parsingException) {
-            println "Error parsing XML content for $username: ${parsingException.getMessage()}"
-            return []
+            return new XmlSlurper().parseText(rawXmlContent)
+        } catch (Exception parsingEx) {
+            println "Failed to parse XML content for $username: ${parsingEx.getMessage()}. Content was: $rawXmlContent"
+            // Return a GPathResult representing an empty collection on parsing failure
+            return new XmlSlurper().parseText("<items totalitems=\"0\" termsofuse=\"error\"><error>XML Parsing Error</error></items>")
         }
     }
 
