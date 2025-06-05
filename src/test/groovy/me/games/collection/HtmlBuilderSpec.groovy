@@ -14,30 +14,17 @@ class HtmlBuilderSpec extends Specification {
         actualBggScraper = new BGGScraper()
         actualBggScraper.searchBase = "https://api.geekdo.com/xmlapi2"
         htmlBuilder = new HtmlBuilder(actualBggScraper)
-        fetchCollectionCallCount = 0 // Reset for each test
+        fetchCollectionCallCount = 0
     }
 
     // Helper to stub fetchCollection and count calls
     private void stubFetchCollection(Closure listProvider) {
         actualBggScraper.metaClass.fetchCollection = { String usernameArg ->
             fetchCollectionCallCount++
-            println "metaClass stub fetchCollection called with: $usernameArg, call count: $fetchCollectionCallCount"
-            listProvider.call(usernameArg) // Call the closure to get the list
+            // println "metaClass stub fetchCollection called with: $usernameArg, call count: $fetchCollectionCallCount" // Debug line removed
+            listProvider.call(usernameArg)
         }
     }
-
-    def cleanup() {
-        // It's good practice to try and clean up metaclass changes,
-        // though instance-level changes like this are often less problematic.
-        // If BGGScraper.metaClass (static) was changed, cleanup is more critical.
-        // For this, we could try:
-        // GroovySystem.metaClassRegistry.removeMetaClass(BGGScraper.class)
-        // Or, more targeted, try to restore the original method if possible.
-        // Often, simply letting the instance go out of scope is enough for instance-level changes.
-        // For safety in tests, explicit cleanup can be better if issues arise.
-        // However, Spock usually isolates tests well. Let's rely on that for now.
-    }
-
 
     def "build - generates HTML with games and correct filtering"() {
         given:
@@ -127,15 +114,13 @@ class HtmlBuilderSpec extends Specification {
 
     def "build - shuffles games when shuffle flag is true"() {
         given:
-            stubFetchCollection { usernameArg -> // usernameArg is "testuser"
+            stubFetchCollection {
                 (1..50).collect { i ->
                     [name: "Game ${i}", imageUrl: "https://example.com/game${i}.jpg", id: "${i}"]
                 }
             }
         when:
             def resultNoShuffle = htmlBuilder.build("testuser", 200, true, true, false, 0, 0)
-            // Reset count for the second call if stubFetchCollection is called per SUT call.
-            // The current stubFetchCollection is per test, so fetchCollectionCallCount will increment.
             def resultWithShuffle = htmlBuilder.build("testuser", 200, true, true, true, 0, 0)
 
             def gamesNoShuffle = extractGameOrderFromHtml(resultNoShuffle)

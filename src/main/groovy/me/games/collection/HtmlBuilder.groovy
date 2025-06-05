@@ -2,9 +2,9 @@ package me.games.collection
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
-import groovy.xml.MarkupBuilder // Added for direct use
-import java.io.StringWriter // Added for direct use
-import java.util.Collections // Added for direct use
+import groovy.xml.MarkupBuilder
+import java.io.StringWriter
+import java.util.Collections
 
 @Component('htmlBuilder')
 class HtmlBuilder {
@@ -17,7 +17,6 @@ class HtmlBuilder {
     }
 
     def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle, int overflow = 0, int repeat = 0) {
-        // fetchCollection now returns List<Map>
         List<Map<String, String>> gamesList = bggScraper.fetchCollection(username)
 
         // Defensive copy if shuffle is true, as Collections.shuffle works in-place
@@ -27,21 +26,19 @@ class HtmlBuilder {
             Collections.shuffle(processedGames)
         }
 
-        // Handle repeat: games = games * (repeat + 1)
         if (repeat > 0 && !processedGames.isEmpty()) {
-            List<Map<String, String>> originalGames = new ArrayList<>(processedGames) // copy of potentially shuffled list
+            List<Map<String, String>> originalGames = new ArrayList<>(processedGames)
             for (int i = 0; i < repeat; i++) {
-                processedGames.addAll(originalGames) // add all elements from original to repeat
+                processedGames.addAll(originalGames)
             }
         }
-
 
         def writer = new StringWriter()
         def markup = new MarkupBuilder(writer)
 
         markup.html {
             head {
-                title("$username's colelction") // Typo "colelction" is from original source
+                title("$username's colelction")
                 style(type: "text/css", """
                     * {
                       margin: 0;
@@ -115,8 +112,7 @@ class HtmlBuilder {
 
             body {
                 div(class: "flex-container") {
-                    // Now iterating over the List<Map>
-                    processedGames.each { game -> // game is a Map
+                    processedGames.each { game ->
                         def contentClosure = {
                             img(alt: game.name, title: showName ? '' : game.name, src: game.imageUrl)
                             if (showName) span(class: 'overlay', game.name)

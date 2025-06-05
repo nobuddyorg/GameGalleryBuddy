@@ -40,7 +40,6 @@ class BGGScraperSpec extends Specification {
                     <status own="1"/>
                 </item>
             </items>'''
-            // Stub the protected fetchFromUrl method
             scraper.metaClass.fetchFromUrl = { HttpURLConnection conn -> mockXml }
 
         when:
@@ -48,7 +47,8 @@ class BGGScraperSpec extends Specification {
 
         then:
             result instanceof List
-            result.size() == 2 // Game 2 (not owned) and Game 3 (expansion) should be filtered out
+            // Game 2 (not owned) and Game 3 (expansion) should be filtered out
+            result.size() == 2
             result[0].name == "Game 1"
             result[0].id == "1"
             result[0].imageUrl == "g1.jpg"
@@ -120,9 +120,9 @@ class BGGScraperSpec extends Specification {
                 def responseAction = responses[callCount]
                 callCount++
                 if (responseAction instanceof Closure) {
-                    responseAction() // This will throw the exception
+                    responseAction()
                 } else {
-                    return responseAction // This will return the mockXml
+                    return responseAction
                 }
             }
 
@@ -210,13 +210,9 @@ class BGGScraperSpec extends Specification {
         then:
             result instanceof List
             result.isEmpty()
-            // Optionally, verify a log message if your actual code logs parsing exceptions
-            // This requires more advanced Spock features or checking console output if applicable
     }
 
-
     def cleanup() {
-        // Reset metaClass modifications if necessary, though Spock usually handles this for instance-level metaClass changes.
-        // GroovySystem.metaClassRegistry.removeMetaClass(BGGScraper.class) // Example if global changes were made
+        // Instance-level metaClass changes are generally cleaned up by Spock when the instance goes out of scope.
     }
 }
