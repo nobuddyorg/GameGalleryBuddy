@@ -1,6 +1,6 @@
-# 🎲 BGGWallPaper
+# 🎲 GameGalleryBuddy
 
-**BGGWallPaper** generates a wallpaper using all board games from a specified [BoardGameGeek](https://boardgamegeek.com) user’s collection.
+**GameGalleryBuddy** generates a wallpaper using all board games from a specified [BoardGameGeek](https://boardgamegeek.com) user’s collection.
 
 ## Getting Started
 
