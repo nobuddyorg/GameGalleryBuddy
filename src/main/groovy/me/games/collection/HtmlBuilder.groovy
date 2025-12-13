@@ -13,7 +13,7 @@ class HtmlBuilder {
         this.bggScraper = bggScraper
     }
 
-    def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle, int overflow = 0, int repeat = 0, Boolean includePrevOwned = False) {
+    def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle, int overflow = 0, int repeat = 0, Boolean includePrevOwned = false) {
         def xml = bggScraper.fetchCollection(username)
         def games = xml.children()
                 .findAll {
