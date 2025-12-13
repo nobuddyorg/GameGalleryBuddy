@@ -31,13 +31,13 @@ case $choice in
   1)
     command -v docker >/dev/null 2>&1 || { echo "Docker is not installed. Exiting."; exit 1; }
     docker info >/dev/null 2>&1 || { echo "Docker is installed but not running. Exiting."; exit 1; }
-    docker build -t bggwallpaper:latest . && docker run -p 8080:8080 --rm bggwallpaper:latest
+    docker build -t bggwallpaper:latest . && docker run -p 8080:8080 --rm --env-file .env bggwallpaper:latest
     ;;
   2)
     run_gradle bootRun
     ;;
   3)
-    run_gradle test
+    run_gradle test --info
     ;;
   *)
     echo "Invalid option. Exiting."
