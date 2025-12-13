@@ -7,7 +7,7 @@ COPY build.gradle build.gradle
 COPY src src
 RUN ./gradlew build -x test --no-daemon --stacktrace --info
 
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre-jammy
 WORKDIR /app
 COPY --from=build /app/build/libs/boardgames-0.0.1.jar .
 EXPOSE 8080
