@@ -2,36 +2,54 @@ package me.games.collection
 
 import groovy.xml.XmlSlurper
 import org.springframework.stereotype.Component
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 @Component('bggScraper')
 class BGGScraper {
 
+    private static final Logger log = LoggerFactory.getLogger(BGGScraper)
+
+    String apiToken = System.getenv('BGG_API_TOKEN')
+
     def fetchCollection(String username) {
-        String searchBase = 'http://api.geekdo.com/xmlapi2'
-        String searchQuery = 'collection'
-        String searchParameter = 'username'
 
-        String queueMessage = 'Please try again later for access'
-        String content = queueMessage
+        if (!apiToken) {
+            log.error('BGG_API_TOKEN is not set. Cannot call BoardGameGeek XML API.')
+            throw new IllegalStateException('BGG_API_TOKEN is not set')
+        }
 
-        while (content.contains(queueMessage)) {
+        String baseUrl = 'https://boardgamegeek.com/xmlapi2/collection'
+        String urlString = "$baseUrl?username=$username&stats=1"
+
+        String content
+
+        while (true) {
             try {
-                URL url = "$searchBase/$searchQuery?$searchParameter=$username".toURL()
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection()
-                conn.setInstanceFollowRedirects(true)
-                HttpURLConnection.setFollowRedirects(true)
+                HttpURLConnection conn = (HttpURLConnection) new URL(urlString).openConnection()
+                conn.setRequestMethod('GET')
+                conn.setRequestProperty('Authorization', "Bearer $apiToken")
+                conn.instanceFollowRedirects = true
 
-                content = fetchFromUrl(conn)
-                if (content.contains(queueMessage)) sleep(1 * 1000)
-            } catch (e) {
-                sleep(5 * 1000)
+                int status = conn.responseCode
+
+                if (status == 202) {
+                    sleep(5_000)
+                    continue
+                }
+
+                if (status != 200) {
+                    String errorBody = conn.errorStream?.getText('UTF-8')
+                    throw new RuntimeException("BGG returned $status: $errorBody")
+                }
+
+                content = conn.inputStream.getText('UTF-8')
+                break
+            } catch (Exception e) {
+                sleep(5_000)
             }
         }
 
-        return new XmlSlurper().parseText(content)
-    }
-
-    protected String fetchFromUrl(HttpURLConnection conn) {
-        conn.getHeaderField("Location").toURL().text
+        new XmlSlurper().parseText(content)
     }
 }

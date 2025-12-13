@@ -1,5 +1,11 @@
 #!/bin/bash
 
+[[ -f ./.env ]] || { echo ".env file missing"; exit 1; }
+set -a
+. ./.env
+set +a
+[[ -n "${BGG_API_TOKEN:-}" ]] || { echo "BGG_API_TOKEN missing or empty"; exit 1; }
+
 echo "Select an option to run the application:"
 echo "1. Run with Docker"
 echo "2. Run directly with Gradle (no installed tools required)"

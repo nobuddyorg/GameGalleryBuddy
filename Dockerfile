@@ -4,6 +4,7 @@ COPY gradlew gradlew
 COPY gradle gradle
 COPY settings.gradle settings.gradle
 COPY build.gradle build.gradle
+COPY .env .env
 COPY src src
 RUN ./gradlew build --no-daemon --stacktrace --info
 
