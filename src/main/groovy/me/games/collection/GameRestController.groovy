@@ -22,7 +22,8 @@ class GameRestController {
             @RequestParam(name = "showUrl", required = false, defaultValue = "true") Boolean showUrl,
             @RequestParam(name = "shuffle", required = false, defaultValue = "false") Boolean shuffle,
             @RequestParam(name = "overflow", required = false, defaultValue = "0") Integer overflow,
-            @RequestParam(name = "repeat", required = false, defaultValue = "0") Integer repeat) {
-        htmlBuilder.build(username, size, showName, showUrl, shuffle, overflow, repeat)
+            @RequestParam(name = "repeat", required = false, defaultValue = "0") Integer repeat,
+            @RequestParam(name = "includePrevOwned", required = false, defaultValue = "false") Boolean includePrevOwned) {
+        htmlBuilder.build(username, size, showName, showUrl, shuffle, overflow, repeat, includePrevOwned)
     }
 }

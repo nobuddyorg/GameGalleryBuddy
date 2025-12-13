@@ -19,10 +19,10 @@ class GameRestControllerSpec extends Specification {
 
     def "fetchCollection - all params customized"() {
         given:
-            htmlBuilder.build("alice", 42, true, false, true, 0, 0) >> "<html>Custom</html>"
+            htmlBuilder.build("alice", 42, true, false, true, 0, 0, false) >> "<html>Custom</html>"
 
         when:
-            def result = controller.fetchCollection("alice", 42, true, false, true, 0, 0)
+            def result = controller.fetchCollection("alice", 42, true, false, true, 0, 0, false)
 
         then:
             result == "<html>Custom</html>"
