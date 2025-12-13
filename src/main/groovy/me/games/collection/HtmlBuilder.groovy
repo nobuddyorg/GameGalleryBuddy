@@ -13,11 +13,11 @@ class HtmlBuilder {
         this.bggScraper = bggScraper
     }
 
-    def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle, int overflow = 0, int repeat = 0) {
+    def build(String username, Integer size, Boolean showName, Boolean showUrl, Boolean shuffle, int overflow = 0, int repeat = 0, Boolean includePrevOwned = False) {
         def xml = bggScraper.fetchCollection(username)
         def games = xml.children()
                 .findAll {
-                    it.status.@own == "1" && it.@objecttype == 'thing' && it.@subtype == 'boardgame'
+                    (it.status.@own == "1" || (includePrevOwned && it.status.@prevowned == "1")) && it.@objecttype == 'thing' && it.@subtype == 'boardgame'
                 }
                 .collect {
                     [name: it.name.text(), imageUrl: it.thumbnail.text(), id: it.@objectid]
@@ -46,12 +46,12 @@ class HtmlBuilder {
                     }
                     ::-webkit-scrollbar {
                         width: 0px;
-                        background: transparent; /* make scrollbar transparent */
+                        background: transparent;
                     }
                     html, body {
-                        overflow-x: visible; /* or scroll if you want a scrollbar */
-                    }                    
-                    
+                        overflow-x: visible;
+                    }
+
                     .flex-container {
                         display: flex;
                         flex-wrap: wrap;
@@ -62,7 +62,7 @@ class HtmlBuilder {
                         gap: 0;
                         margin-left: -${overflow}px;
                     }
-                    
+
                     .image {
                         width: ${size}px;
                         height: ${size}px;
@@ -71,21 +71,22 @@ class HtmlBuilder {
                         box-sizing: border-box;
                         padding-left: ${overflow}px;
                     }
-                    
+
                     body {
                         background-color: #999999;
                     }
-                    
+
                     img {
-                        min-height:${size}px; 
+                        min-height:${size}px;
                         min-width:${size}px;
-                        object-fit: cover; 
-                        x-overflow: hidden; 
-                        max-height: 100%; 
+                        object-fit: cover;
+                        x-overflow: hidden;
+                        max-height: 100%;
                         max-width: 100%;
                         position: relative;
+                        z-index: 999;
                     }
-                    
+
                     .overlay {
                         display: inline-block;
                         text-align: center;
@@ -99,9 +100,28 @@ class HtmlBuilder {
                         font-size: ${size / 10};
                         background-color: rgba(100,100,100,0.5);
                     }
-                    
+
                     a {
                         text-decoration: none;
+                    }
+
+                    .bgg-watermark {
+                        position: fixed;
+                        bottom: ${size / 2}px;
+                        right: ${size / 2}px;
+                        z-index: 0;
+                        opacity: 0.8;
+                        pointer-events: none;
+                    }
+
+                    .bgg-watermark img {
+                        height: auto;
+                        width: auto;
+                        min-height: unset;
+                        min-width: unset;
+                        max-height: unset;
+                        max-width: unset;
+                        object-fit: contain;
                     }
                 """)
             }
@@ -124,6 +144,10 @@ class HtmlBuilder {
                             }
                         }
                     }
+                }
+
+                div(class: "bgg-watermark") {
+                    img(src: "/powered-by-bgg.png", alt: "Powered by BoardGameGeek")
                 }
             }
         }

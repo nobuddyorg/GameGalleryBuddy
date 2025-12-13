@@ -2,6 +2,8 @@
 
 **GameGalleryBuddy** generates a wallpaper using all board games from a specified [BoardGameGeek](https://boardgamegeek.com) user’s collection.
 
+![Powered by BGG](src/main/resources/static/powered-by-bgg.png)
+
 ## Getting Started
 
 Run the application with:
@@ -18,15 +20,16 @@ http://localhost:8080/collection
 
 ## Parameters
 
-| Parameter   | Required | Default | Description                                                                 |
-|-------------|----------|---------|-----------------------------------------------------------------------------|
-| `username`  | ✅ Yes    | —       | BGG username of the collection owner.                                      |
-| `size`      | ❌ No     | `150`   | Size (in pixels) of each board game cover on the wallpaper.                |
-| `showName`  | ❌ No     | `false` | Whether to display the game name as an overlay on the image.               |
-| `showUrl`   | ❌ No     | `true`  | Whether to make game images clickable, linking to their BGG pages.         |
-| `shuffle`   | ❌ No     | `false` | Shuffle the games randomly (if `true`) or order them alphabetically.       |
-| `overflow`  | ❌ No     | `0`     | Allows an image overflow on the edge of the browser, given as Pixels.      |
-| `repeat`    | ❌ No     | `0`     | Will repeat the images in same order at the end if `>0`.                   |
+| Parameter          | Required | Default | Description                                                                              |
+| ------------------ | -------- | ------- | ---------------------------------------------------------------------------------------- |
+| `username`         | ✅ Yes   | —       | BGG username of the collection owner.                                                    |
+| `size`             | ❌ No    | `150`   | Size (in pixels) of each board game cover on the wallpaper.                              |
+| `showName`         | ❌ No    | `false` | Whether to display the game name as an overlay on the image.                             |
+| `showUrl`          | ❌ No    | `true`  | Whether to make game images clickable, linking to their BGG pages.                       |
+| `shuffle`          | ❌ No    | `false` | Shuffle the games randomly (if `true`) or keep their original order.                     |
+| `overflow`         | ❌ No    | `0`     | Allows images to overflow the container edges, in pixels.                                |
+| `repeat`           | ❌ No    | `0`     | Repeats the image list `(repeat + 1)` times to extend the wallpaper.                     |
+| `includePrevOwned` | ❌ No    | `false` | Also include games marked as _previously owned_ on BGG. Owned games are always included. |
 
 ## Example
 
