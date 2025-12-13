@@ -22,7 +22,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: gradle test
-        run: ./gradlew clean jacocoTestReport
+        run: |
+          echo "BGG_API_TOKEN=${{ secrets.BGG_API_TOKEN }}" > .env
+          echo "3" | ./run.sh
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action/linux@v2

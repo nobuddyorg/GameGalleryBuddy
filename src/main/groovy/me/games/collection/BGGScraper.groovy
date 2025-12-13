@@ -12,6 +12,14 @@ class BGGScraper {
 
     String apiToken = System.getenv('BGG_API_TOKEN')
 
+    protected HttpURLConnection openConnection(String urlString) {
+        (HttpURLConnection) new URL(urlString).openConnection()
+    }
+
+    protected void sleepMs(long ms) {
+        sleep(ms)
+    }
+
     def fetchCollection(String username) {
 
         if (!apiToken) {
@@ -26,7 +34,7 @@ class BGGScraper {
 
         while (true) {
             try {
-                HttpURLConnection conn = (HttpURLConnection) new URL(urlString).openConnection()
+                HttpURLConnection conn = openConnection(urlString)
                 conn.setRequestMethod('GET')
                 conn.setRequestProperty('Authorization', "Bearer $apiToken")
                 conn.instanceFollowRedirects = true
@@ -34,7 +42,7 @@ class BGGScraper {
                 int status = conn.responseCode
 
                 if (status == 202) {
-                    sleep(5_000)
+                    sleepMs(5_000)
                     continue
                 }
 
@@ -46,7 +54,7 @@ class BGGScraper {
                 content = conn.inputStream.getText('UTF-8')
                 break
             } catch (Exception e) {
-                sleep(5_000)
+                sleepMs(5_000)
             }
         }
 
