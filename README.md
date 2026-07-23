@@ -1,4 +1,4 @@
-# 🎲 GameGalleryBuddy
+# GameGalleryBuddy
 
 **GameGalleryBuddy** generates a wallpaper using all board games from a specified [BoardGameGeek](https://boardgamegeek.com) user’s collection.
 
