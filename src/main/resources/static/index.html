@@ -210,21 +210,9 @@
         </div>
     </div>
 
+    <script src="/collection-form.js"></script>
     <script>
-        document.getElementById('collectionForm').addEventListener('submit', function (evt) {
-            evt.preventDefault();
-            var f = evt.target;
-            var params = new URLSearchParams();
-            params.set('username', f.username.value.trim());
-            params.set('size', f.size.value);
-            params.set('showName', f.showName.checked);
-            params.set('showUrl', f.showUrl.checked);
-            params.set('shuffle', f.shuffle.checked);
-            params.set('overflow', f.overflow.value);
-            params.set('repeat', f.repeat.value);
-            params.set('includePrevOwned', f.includePrevOwned.checked);
-            window.location.href = '/collection?' + params.toString();
-        });
+        bindCollectionForm('collectionForm');
     </script>
 </body>
 </html>

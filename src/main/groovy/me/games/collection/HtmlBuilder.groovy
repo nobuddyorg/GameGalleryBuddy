@@ -132,6 +132,7 @@ class HtmlBuilder {
                         width: 90px;
                         height: 90px;
                         z-index: 10000;
+                        pointer-events: none;
                     }
 
                     #settings-toggle {
@@ -147,14 +148,13 @@ class HtmlBuilder {
                         font-size: 1.1rem;
                         cursor: pointer;
                         opacity: 0;
-                        pointer-events: none;
+                        pointer-events: auto;
                         transition: opacity 0.15s ease;
                     }
 
-                    #settings-hotzone:hover #settings-toggle,
+                    #settings-toggle:hover,
                     #settings-hotzone.panel-open #settings-toggle {
                         opacity: 1;
-                        pointer-events: auto;
                     }
 
                     #settings-panel {
@@ -273,32 +273,19 @@ class HtmlBuilder {
                             input(type: "number", id: "s-repeat", name: "repeat", value: repeat, min: "0")
                         }
 
-                        def showNameAttrs = [type: "checkbox", id: "s-showName", name: "showName"]
-                        if (showName) showNameAttrs.checked = "checked"
-                        div(class: "checkbox-field") {
-                            input(showNameAttrs)
-                            label(for: "s-showName", "Show names")
-                        }
-
-                        def showUrlAttrs = [type: "checkbox", id: "s-showUrl", name: "showUrl"]
-                        if (showUrl) showUrlAttrs.checked = "checked"
-                        div(class: "checkbox-field") {
-                            input(showUrlAttrs)
-                            label(for: "s-showUrl", "Link to BGG")
-                        }
-
-                        def shuffleAttrs = [type: "checkbox", id: "s-shuffle", name: "shuffle"]
-                        if (shuffle) shuffleAttrs.checked = "checked"
-                        div(class: "checkbox-field") {
-                            input(shuffleAttrs)
-                            label(for: "s-shuffle", "Shuffle")
-                        }
-
-                        def includePrevOwnedAttrs = [type: "checkbox", id: "s-includePrevOwned", name: "includePrevOwned"]
-                        if (includePrevOwned) includePrevOwnedAttrs.checked = "checked"
-                        div(class: "checkbox-field") {
-                            input(includePrevOwnedAttrs)
-                            label(for: "s-includePrevOwned", "Include prev. owned")
+                        def checkboxDefs = [
+                            [name: "showName", label: "Show names", checked: showName],
+                            [name: "showUrl", label: "Link to BGG", checked: showUrl],
+                            [name: "shuffle", label: "Shuffle", checked: shuffle],
+                            [name: "includePrevOwned", label: "Include prev. owned", checked: includePrevOwned],
+                        ]
+                        checkboxDefs.each { cb ->
+                            def attrs = [type: "checkbox", id: "s-${cb.name}", name: cb.name]
+                            if (cb.checked) attrs.checked = "checked"
+                            div(class: "checkbox-field") {
+                                input(attrs)
+                                label(for: "s-${cb.name}", cb.label)
+                            }
                         }
 
                         button(type: "submit", "Apply")
@@ -306,22 +293,8 @@ class HtmlBuilder {
                     }
                 }
 
-                script(type: "text/javascript", """
-                    document.getElementById('settings-form').addEventListener('submit', function (evt) {
-                        evt.preventDefault();
-                        var f = evt.target;
-                        var params = new URLSearchParams();
-                        params.set('username', f.username.value.trim());
-                        params.set('size', f.size.value);
-                        params.set('showName', f.showName.checked);
-                        params.set('showUrl', f.showUrl.checked);
-                        params.set('shuffle', f.shuffle.checked);
-                        params.set('overflow', f.overflow.value);
-                        params.set('repeat', f.repeat.value);
-                        params.set('includePrevOwned', f.includePrevOwned.checked);
-                        window.location.href = '/collection?' + params.toString();
-                    });
-                """)
+                script(src: "/collection-form.js", "")
+                script(type: "text/javascript", "bindCollectionForm('settings-form');")
             }
         }
 
