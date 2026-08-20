@@ -6,6 +6,19 @@
 
 ## Getting Started
 
+### Configuration
+
+The app calls the BoardGameGeek XML API, which requires an API token.
+
+1. Generate a token at [boardgamegeek.com/applications](https://boardgamegeek.com/applications).
+2. Create a `.env` file in the project root with:
+
+   ```env
+   BGG_API_TOKEN=your-token-here
+   ```
+
+### Run
+
 Run the application with:
 
 ```bash
@@ -15,10 +28,20 @@ Run the application with:
 Then, open your browser and go to:
 
 ```
-http://localhost:8080/collection
+http://localhost:8080/
 ```
 
+## User Interface
+
+The start page is a form for building the wallpaper: enter a BGG username, adjust the options below it, and submit to generate the wallpaper.
+
+![Start page](docs/start-page.png)
+
+On the generated wallpaper page, hover the top-right corner to reveal a settings icon (⚙). It opens a panel with the same options, pre-filled with the current values — change them and hit **Apply** to regenerate in place, or **Home** to return to the start page.
+
 ## Parameters
+
+The form and settings panel cover all of these; they're also usable directly as `/collection` query parameters.
 
 | Parameter          | Required | Default | Description                                                                              |
 | ------------------ | -------- | ------- | ---------------------------------------------------------------------------------------- |

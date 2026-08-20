@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameGalleryBuddy</title>
+    <link rel="icon" type="image/webp" href="https://raw.githubusercontent.com/nobuddyorg/nobuddyorg.github.io/refs/heads/main/web-buddy/public/logos/gamegallery.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2b2b2b;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #eeeeee;
+            padding: 24px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background-color: #383838;
+            border-radius: 10px;
+            padding: 28px 32px 32px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+        }
+
+        .brand-title {
+            font-family: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .brand-title-ruled {
+            color: #eeeeee;
+            border-bottom: 2px solid currentColor;
+            padding-bottom: 1px;
+        }
+
+        .brand-title-accent {
+            color: #f97316;
+        }
+
+        p.subtitle {
+            color: #b7b7b7;
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            color: #cfcfcf;
+            margin-bottom: 4px;
+        }
+
+        .field {
+            margin-bottom: 16px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #555555;
+            background-color: #2b2b2b;
+            color: #eeeeee;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #7aa7ff;
+        }
+
+        .row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .row .field {
+            flex: 1;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-field label {
+            margin-bottom: 0;
+        }
+
+        .checkbox-field input {
+            width: 16px;
+            height: 16px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 8px;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background-color: #4f7cff;
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #3d68eb;
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .footer img {
+            max-width: 140px;
+            opacity: 0.85;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="brand">
+            <img class="brand-logo" src="https://raw.githubusercontent.com/nobuddyorg/nobuddyorg.github.io/refs/heads/main/web-buddy/public/logos/gamegallery.webp" alt="">
+            <span class="brand-title"><span class="brand-title-ruled">GameGallery</span><span class="brand-title-accent">Buddy</span></span>
+        </div>
+        <p class="subtitle">Generate a wallpaper from a BoardGameGeek collection.</p>
+
+        <form id="collectionForm">
+            <div class="field">
+                <label for="username">BGG Username</label>
+                <input type="text" id="username" name="username" placeholder="e.g. besessener" required>
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <label for="size">Cover Size (px)</label>
+                    <input type="number" id="size" name="size" value="150" min="20">
+                </div>
+                <div class="field">
+                    <label for="overflow">Overflow (px)</label>
+                    <input type="number" id="overflow" name="overflow" value="0" min="0">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="repeat">Repeat (extra passes)</label>
+                <input type="number" id="repeat" name="repeat" value="0" min="0">
+            </div>
+
+            <div class="checkbox-field">
+                <input type="checkbox" id="showName" name="showName">
+                <label for="showName">Show game name overlay</label>
+            </div>
+
+            <div class="checkbox-field">
+                <input type="checkbox" id="showUrl" name="showUrl" checked>
+                <label for="showUrl">Link covers to BGG page</label>
+            </div>
+
+            <div class="checkbox-field">
+                <input type="checkbox" id="shuffle" name="shuffle">
+                <label for="shuffle">Shuffle order</label>
+            </div>
+
+            <div class="checkbox-field">
+                <input type="checkbox" id="includePrevOwned" name="includePrevOwned">
+                <label for="includePrevOwned">Include previously owned games</label>
+            </div>
+
+            <button type="submit">Generate Wallpaper</button>
+        </form>
+
+        <div class="footer">
+            <img src="/powered-by-bgg.png" alt="Powered by BoardGameGeek">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('collectionForm').addEventListener('submit', function (evt) {
+            evt.preventDefault();
+            var f = evt.target;
+            var params = new URLSearchParams();
+            params.set('username', f.username.value.trim());
+            params.set('size', f.size.value);
+            params.set('showName', f.showName.checked);
+            params.set('showUrl', f.showUrl.checked);
+            params.set('shuffle', f.shuffle.checked);
+            params.set('overflow', f.overflow.value);
+            params.set('repeat', f.repeat.value);
+            params.set('includePrevOwned', f.includePrevOwned.checked);
+            window.location.href = '/collection?' + params.toString();
+        });
+    </script>
+</body>
+</html>
