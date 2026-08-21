@@ -143,8 +143,8 @@ class HtmlBuilder {
                         height: 36px;
                         border: none;
                         border-radius: 50%;
-                        background-color: rgba(40, 40, 40, 0.8);
-                        color: #eeeeee;
+                        background-color: rgba(255, 255, 255, 0.85);
+                        color: #17203a;
                         font-size: 1.1rem;
                         cursor: pointer;
                         opacity: 0;
@@ -166,10 +166,11 @@ class HtmlBuilder {
                         width: 220px;
                         padding: 16px;
                         border-radius: 8px;
-                        background-color: rgba(40, 40, 40, 0.92);
-                        color: #eeeeee;
+                        background-color: rgba(255, 255, 255, 0.95);
+                        color: #17203a;
                         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                         font-size: 0.8rem;
+                        box-shadow: 0 8px 24px rgba(23, 32, 58, 0.18);
                     }
 
                     #settings-panel.open {
@@ -179,7 +180,7 @@ class HtmlBuilder {
                     #settings-panel label {
                         display: block;
                         margin-bottom: 3px;
-                        color: #cfcfcf;
+                        color: #6a6e7c;
                     }
 
                     #settings-panel .field {
@@ -191,9 +192,9 @@ class HtmlBuilder {
                         width: 100%;
                         padding: 5px 6px;
                         border-radius: 4px;
-                        border: 1px solid #555555;
-                        background-color: #2b2b2b;
-                        color: #eeeeee;
+                        border: 1px solid #8c8779;
+                        background-color: #e3e0d8;
+                        color: #17203a;
                     }
 
                     #settings-panel .checkbox-field {
@@ -213,7 +214,7 @@ class HtmlBuilder {
                         padding: 7px;
                         border: none;
                         border-radius: 4px;
-                        background-color: #4f7cff;
+                        background-color: #ad5725;
                         color: #ffffff;
                         font-weight: 600;
                         cursor: pointer;
@@ -221,7 +222,8 @@ class HtmlBuilder {
 
                     #settings-panel button.secondary {
                         margin-top: 6px;
-                        background-color: #555555;
+                        background-color: #eceae3;
+                        color: #17203a;
                     }
                 """)
             }
