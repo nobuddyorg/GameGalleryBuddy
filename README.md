@@ -2,7 +2,7 @@
 
 **GameGalleryBuddy** generates a wallpaper using all board games from a specified [BoardGameGeek](https://boardgamegeek.com) user’s collection.
 
-![Powered by BGG](src/main/resources/static/powered-by-bgg.png)
+<img src="src/main/resources/static/powered-by-bgg.png" alt="Powered by BGG" width="140">
 
 ## Getting Started
 
