@@ -1,12 +1,16 @@
 package me.games.collection
 
+import groovy.xml.XmlSlurper
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.boot.resttestclient.TestRestTemplate
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate
 import org.springframework.http.HttpStatus
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 
@@ -26,6 +30,17 @@ class CollectionApplicationSpec {
 
     @Autowired
     MockMvc mockMvc
+
+    // Real network calls to the live BGG API here previously caused CI to hang for hours
+    // whenever BGG kept returning 202 (still generating); stub the scraper instead.
+    @MockitoBean
+    BGGScraper bggScraper
+
+    @BeforeEach
+    void stubBggScraper() {
+        Mockito.when(bggScraper.fetchCollection(Mockito.anyString()))
+                .thenReturn(new XmlSlurper().parseText('<items></items>'))
+    }
 
     @Test
     void testControllerLoaded() {

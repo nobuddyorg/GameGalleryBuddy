@@ -10,6 +10,10 @@ class BGGScraper {
 
     private static final Logger log = LoggerFactory.getLogger(BGGScraper)
 
+    private static final int CONNECT_TIMEOUT_MS = 10_000
+    private static final int READ_TIMEOUT_MS = 10_000
+    private static final int MAX_ATTEMPTS = 20
+
     String apiToken = System.getenv('BGG_API_TOKEN')
 
     protected HttpURLConnection openConnection(String urlString) {
@@ -31,13 +35,16 @@ class BGGScraper {
         String urlString = "$baseUrl?username=$username&stats=1"
 
         String content
+        Exception lastError
 
-        while (true) {
+        for (int attempt = 1; attempt <= MAX_ATTEMPTS && !content; attempt++) {
             try {
                 HttpURLConnection conn = openConnection(urlString)
                 conn.setRequestMethod('GET')
                 conn.setRequestProperty('Authorization', "Bearer $apiToken")
                 conn.instanceFollowRedirects = true
+                conn.connectTimeout = CONNECT_TIMEOUT_MS
+                conn.readTimeout = READ_TIMEOUT_MS
 
                 int status = conn.responseCode
 
@@ -52,10 +59,14 @@ class BGGScraper {
                 }
 
                 content = conn.inputStream.getText('UTF-8')
-                break
             } catch (Exception e) {
+                lastError = e
                 sleepMs(5_000)
             }
+        }
+
+        if (!content) {
+            throw new IllegalStateException("Failed to fetch BGG collection for '$username' after $MAX_ATTEMPTS attempts", lastError)
         }
 
         new XmlSlurper().parseText(content)
