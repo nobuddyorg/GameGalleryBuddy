@@ -1,0 +1,129 @@
+---
+- name: Configure gamegallerybuddy host
+  hosts: app
+  become: true
+
+  vars:
+    app_user: gamegallerybuddy
+    app_dir: /opt/gamegallerybuddy
+    app_internal_port: 8080
+    domain_name: "REPLACE_ME.example.com"
+    image_tar_src: "{{ playbook_dir }}/../../gamegallerybuddy-image.tar"
+    bgg_api_token: "REPLACE_ME"
+
+  tasks:
+    - name: Install Docker and prerequisites
+      apt:
+        name:
+          - docker.io
+          - debian-keyring
+          - debian-archive-keyring
+          - apt-transport-https
+          - curl
+          - gnupg
+        state: present
+        update_cache: true
+
+    - name: Fetch Caddy's Cloudsmith GPG key and dearmor it
+      shell: |
+        set -o pipefail
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+          | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+      args:
+        creates: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        executable: /bin/bash
+
+    - name: Add Caddy apt repository source list
+      get_url:
+        url: https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt
+        dest: /etc/apt/sources.list.d/caddy-stable.list
+        mode: "0644"
+      register: caddy_repo_list
+
+    - name: Install Caddy
+      apt:
+        name: caddy
+        state: present
+        update_cache: true
+
+    - name: Create system user for the app
+      user:
+        name: "{{ app_user }}"
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+        groups: docker
+        append: true
+
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: "0750"
+
+    - name: Copy application image tarball (build it first with deploy/build.sh)
+      copy:
+        src: "{{ image_tar_src }}"
+        dest: "{{ app_dir }}/image.tar"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: "0640"
+      notify: load image and restart gamegallerybuddy
+
+    - name: Write .env (BGG_API_TOKEN, passed to the container at runtime)
+      copy:
+        content: "BGG_API_TOKEN={{ bgg_api_token }}\n"
+        dest: "{{ app_dir }}/.env"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: "0640"
+      notify: restart gamegallerybuddy
+
+    - name: Install systemd unit
+      template:
+        src: templates/gamegallerybuddy.service.j2
+        dest: /etc/systemd/system/gamegallerybuddy.service
+        mode: "0644"
+      notify:
+        - reload systemd
+        - restart gamegallerybuddy
+
+    - name: Install Caddyfile
+      template:
+        src: templates/Caddyfile.j2
+        dest: /etc/caddy/Caddyfile
+        mode: "0644"
+      notify: restart caddy
+
+    - name: Enable and start gamegallerybuddy
+      systemd:
+        name: gamegallerybuddy
+        enabled: true
+        state: started
+
+    - name: Enable and start caddy
+      systemd:
+        name: caddy
+        enabled: true
+        state: started
+
+  handlers:
+    - name: reload systemd
+      systemd:
+        daemon_reload: true
+
+    - name: load image and restart gamegallerybuddy
+      shell: docker load -i {{ app_dir }}/image.tar
+      notify: restart gamegallerybuddy
+
+    - name: restart gamegallerybuddy
+      systemd:
+        name: gamegallerybuddy
+        state: restarted
+
+    - name: restart caddy
+      systemd:
+        name: caddy
+        state: restarted

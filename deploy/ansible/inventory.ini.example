@@ -1,0 +1,2 @@
+[app]
+gamegallerybuddy ansible_host=REPLACE_WITH_TERRAFORM_EXTERNAL_IP ansible_user=youruser ansible_ssh_private_key_file=~/.ssh/id_ed25519
