@@ -1,0 +1,6 @@
+{# Single-origin app (UI + API together), unlike RideMergeBuddy's split
+   frontend/backend. Caddy terminates standard HTTPS (80/443, automatic
+   cert) and proxies to the containerized Spring Boot app internally. #}
+{{ domain_name }} {
+    reverse_proxy localhost:{{ app_internal_port }}
+}

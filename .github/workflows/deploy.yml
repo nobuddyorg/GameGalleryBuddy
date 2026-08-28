@@ -1,0 +1,120 @@
+# Provisions/updates the GCP VM with Terraform, builds the app's Docker
+# image, and rolls it out via Ansible. Runs on every push to main touching
+# deploy-relevant paths, or manually via "Run workflow".
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - 'Dockerfile'
+      - 'deploy/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Derive an SSH keypair for the VM from the private key secret
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GCP_SSH_PRIVATE_KEY }}
+
+      - name: Terraform init
+        working-directory: deploy/terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="prefix=gamegallerybuddy"
+
+      - name: Terraform apply
+        working-directory: deploy/terraform
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+          TF_VAR_ssh_user: ${{ vars.GCP_SSH_USER }}
+          TF_VAR_ssh_public_key_path: /home/runner/.ssh/deploy_key.pub
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Read Terraform outputs
+        id: tf
+        working-directory: deploy/terraform
+        run: |
+          echo "ip=$(terraform output -raw external_ip)" >> "$GITHUB_OUTPUT"
+          echo "domain=$(terraform output -raw app_domain)" >> "$GITHUB_OUTPUT"
+          echo "instance=$(terraform output -raw instance_name)" >> "$GITHUB_OUTPUT"
+          echo "zone=$(terraform output -raw zone)" >> "$GITHUB_OUTPUT"
+
+      - name: Build application Docker image
+        run: ./deploy/build.sh
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ansible
+
+      - name: Trust the VM host key
+        # On a first run the VM was just created by Terraform above and SSH
+        # may not have come up yet, so retry instead of failing outright.
+        # NOTE: ssh-keyscan -H hashes the host identifier in known_hosts, so
+        # a plaintext-IP grep against it never matches even once SSH is up -
+        # this bit RideMergeBuddy's identical deploy.yml before the -H flag
+        # was dropped here too.
+        run: |
+          IP="${{ steps.tf.outputs.ip }}"
+          LAST_ERR=""
+          for i in $(seq 1 12); do
+            if LAST_ERR=$(ssh-keyscan "$IP" 2>&1 >> ~/.ssh/known_hosts) && grep -q "$IP" ~/.ssh/known_hosts; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Timed out waiting for SSH on $IP" >&2
+          echo "--- Last ssh-keyscan error ---" >&2
+          echo "$LAST_ERR" >&2
+          echo "--- gcloud compute instances describe ---" >&2
+          gcloud compute instances describe "${{ steps.tf.outputs.instance }}" \
+            --zone "${{ steps.tf.outputs.zone }}" \
+            --format="yaml(status,tags,networkInterfaces)" >&2 || true
+          echo "--- gcloud compute firewall-rules list ---" >&2
+          gcloud compute firewall-rules list \
+            --format="table(name,network,sourceRanges.list(),targetTags.list(),allowed[].map().firewall_rule().list())" >&2 || true
+          echo "--- Serial console output (last 200 lines) ---" >&2
+          gcloud compute instances get-serial-port-output "${{ steps.tf.outputs.instance }}" \
+            --zone "${{ steps.tf.outputs.zone }}" --port 1 2>&1 | tail -200 >&2 || true
+          exit 1
+
+      - name: Run Ansible playbook
+        working-directory: deploy/ansible
+        run: |
+          cat > inventory.ini <<EOF
+          [app]
+          gamegallerybuddy ansible_host=${{ steps.tf.outputs.ip }} ansible_user=${{ vars.GCP_SSH_USER }} ansible_ssh_private_key_file=~/.ssh/deploy_key
+          EOF
+          ansible-playbook -i inventory.ini playbook.yml \
+            -e "domain_name=${{ steps.tf.outputs.domain }}" \
+            -e "bgg_api_token=${{ secrets.BGG_API_TOKEN }}"
