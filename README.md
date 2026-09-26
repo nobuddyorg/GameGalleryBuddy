@@ -65,3 +65,11 @@ http://localhost:8080/collection?username=besessener&size=85&showName=no&showUrl
 ## Sample Output
 
 ![Wall preview](https://user-images.githubusercontent.com/8039350/124144974-b876c480-da8c-11eb-9cc0-76a2c350bf6b.png)
+
+## Contributing
+
+GameGalleryBuddy is a personal hobby project and doesn't accept outside pull requests, issues or feature requests; they are closed without review. Want to change something? Fork it — the MIT License allows it. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
