@@ -28,9 +28,9 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.apache.groovy:groovy:5.1.2'
-    implementation 'org.apache.groovy:groovy-xml:5.1.2'
-    implementation 'org.apache.groovy:groovy-json:5.1.2'
+    implementation 'org.apache.groovy:groovy:6.0.0'
+    implementation 'org.apache.groovy:groovy-xml:6.0.0'
+    implementation 'org.apache.groovy:groovy-json:6.0.0'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
