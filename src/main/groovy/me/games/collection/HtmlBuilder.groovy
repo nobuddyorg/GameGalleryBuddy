@@ -35,7 +35,7 @@ class HtmlBuilder {
         markup.html {
             head {
                 title("$username's colelction")
-                link(rel: "icon", type: "image/webp", href: "https://raw.githubusercontent.com/nobuddyorg/nobuddyorg.github.io/refs/heads/main/web-buddy/public/logos/gamegallery.webp")
+                link(rel: "icon", type: "image/svg+xml", href: "https://raw.githubusercontent.com/nobuddyorg/nobuddyorg.github.io/refs/heads/main/web-buddy/public/logos/gamegallery.svg")
                 style(type: "text/css", """
                     * {
                       margin: 0;
